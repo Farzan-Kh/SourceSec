@@ -1,0 +1,181 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showForm(formId) {
+            document.getElementById('snippetForm').style.display = 'none';
+            document.getElementById('projectForm').style.display = 'none';
+            document.getElementById('repoForm').style.display = 'none';
+            document.getElementById(formId).style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">SScanner</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'user_projects' %}">Projects</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="bi bi-person"></i> Login
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        {% if results %}
+            <a href="javascript:history.back()" class="btn btn-secondary mb-4">Back</a>
+            <h1 class="mb-4">Code Analysis Results</h1>
+            <div class="alert alert-success" role="alert">
+                Analysis completed successfully.
+            </div>
+            <div class="accordion" id="resultsAccordion">
+                {% for result in results %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                            <button class="accordion-button " type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                <div class="d-flex justify-content-center align-items-center w-100">
+                                    <div class="mx-4">Category: <strong>{{ result.metadata_category }}</strong> </div>| 
+                                    <div class="mx-4">Vulnerability Class: <strong>{{ result.metadata_vulnerability_class|join:", " }}</strong> </div>|
+                                    <div class="mx-4">Impact: <strong>{{ result.metadata_impact }}</strong> </div>| 
+                                    <div class="mx-4">Location: <strong>{{ result.location_path|skip_parents }}</strong></div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.parentloop.counter }}-{{ forloop.counter }}" data-bs-parent="#resultsAccordion{{ forloop.parentloop.counter }}">
+                            <div class="accordion-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th>Check ID</th>
+                                        <td>{{ result.check_id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Location Path</th>
+                                        <td>{{ result.location_path }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Start Column</th>
+                                        <td>{{ result.location_start_col }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Start Line</th>
+                                        <td>{{ result.location_start_line }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Taint Sink Value</th>
+                                        <td>{{ result.taint_sink_value }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Taint Source Value</th>
+                                        <td>{{ result.taint_source_value }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Lines</th>
+                                        <td>{{ result.lines }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Message</th>
+                                        <td>{{ result.message }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Category</th>
+                                        <td>{{ result.metadata_category }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Confidence</th>
+                                        <td>{{ result.metadata_confidence }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>CWE</th>
+                                        <td>{{ result.metadata_cwe|join:", " }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Impact</th>
+                                        <td>{{ result.metadata_impact }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>OWASP</th>
+                                        <td>{{ result.metadata_owasp }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>References</th>
+                                        <td>{{ result.metadata_references|join:", " }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Vulnerability Class</th>
+                                        <td>{{ result.metadata_vulnerability_class|join:", " }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h1 class="mb-4">Code Analysis</h1>
+            <div class="alert alert-info" role="alert">
+                Please upload your code for analysis.
+            </div>
+            <div class="btn-group mb-3" role="group">
+                <button type="button" class="btn btn-secondary" onclick="showForm('snippetForm')">Code Snippet</button>
+                <button type="button" class="btn btn-secondary" onclick="showForm('projectForm')">Project Upload</button>
+                <button type="button" class="btn btn-secondary" onclick="showForm('repoForm')">Repo Link</button>
+            </div>
+            <form id="snippetForm" method="post" action="{% url 'analyze_code' %}" style="display: block;">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="source_code">Source Code</label>
+                    <textarea class="form-control" id="source_code" name="source_code" rows="10" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="language">Language</label>
+                    <select class="form-control" id="language" name="language" required>
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="cpp">C++</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="php">PHP</option>
+                        <option value="go">Go</option>
+                        <option value="swift">Swift</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Analyze Code</button>
+            </form>
+            <form id="projectForm" method="post" action="{% url 'analyze_code' %}" enctype="multipart/form-data" style="display: none;">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="file">Project File (.zip or .tar.gz)</label>
+                    <input type="file" class="form-control" id="file" name="file" accept=".zip,.tar.gz" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Analyze Project</button>
+            </form>
+            <form id="repoForm" method="post" action="{% url 'analyze_code' %}" style="display: none;">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="repo_url">Repository URL</label>
+                    <input type="url" class="form-control" id="repo_url" name="repo_url" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Analyze Repo</button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>

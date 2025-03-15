@@ -1,0 +1,121 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Detail</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">{{ project.name }}</h1>
+        <p>{{ project.description }}</p>
+        <p><strong>Created at:</strong> {{ project.created_at }}</p>
+        <p><strong>Updated at:</strong> {{ project.updated_at }}</p>
+        {% if snapshot_url %}
+            <a href="{% url snapshot_url project.id %}" class="btn btn-primary mb-3">Add Snapshot</a>
+        {% endif %}
+        <a href="{% url 'user_projects' %}" class="btn btn-secondary mb-3">Back</a>
+        {% if snapshots %}
+            <ul class="list-group">
+                {% for snapshot in snapshots %}
+                    <li class="list-group-item">
+                        <h5>Snapshot {{ snapshot.id }}</h5>
+                        <p><strong>Created at:</strong> {{ snapshot.created_at }}</p>
+                        <p><strong>Updated at:</strong> {{ snapshot.updated_at }}</p>
+                        <h6>Assessment Result:</h6>
+                        <div class="accordion" id="resultsAccordion{{ forloop.counter }}">
+                            {% for result in snapshot.assessment_result %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                        <button class="accordion-button " type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                            <div class="d-flex justify-content-center align-items-center w-100">
+                                                <div class="mx-4">Category: <strong>{{ result.metadata_category }}</strong> </div>| 
+                                                <div class="mx-4">Vulnerability Class: <strong>{{ result.metadata_vulnerability_class|join:", " }}</strong> </div>|
+                                                <div class="mx-4">Impact: <strong>{{ result.metadata_impact }}</strong> </div>| 
+                                                <div class="mx-4">Location: <strong>{{ result.location_path|skip_parents }}</strong></div>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ forloop.parentloop.counter }}-{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.parentloop.counter }}-{{ forloop.counter }}" data-bs-parent="#resultsAccordion{{ forloop.parentloop.counter }}">
+                                        <div class="accordion-body">
+                                            <table class="table table-borderless">
+                                                <tr>
+                                                    <th>Check ID</th>
+                                                    <td>{{ result.check_id }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Location Path</th>
+                                                    <td>{{ result.location_path }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Start Column</th>
+                                                    <td>{{ result.location_start_col }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Start Line</th>
+                                                    <td>{{ result.location_start_line }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Taint Sink Value</th>
+                                                    <td>{{ result.taint_sink_value }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Taint Source Value</th>
+                                                    <td>{{ result.taint_source_value }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Lines</th>
+                                                    <td>{{ result.lines }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Message</th>
+                                                    <td>{{ result.message }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Category</th>
+                                                    <td>{{ result.metadata_category }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Confidence</th>
+                                                    <td>{{ result.metadata_confidence }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>CWE</th>
+                                                    <td>{{ result.metadata_cwe|join:", " }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Impact</th>
+                                                    <td>{{ result.metadata_impact }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>OWASP</th>
+                                                    <td>{{ result.metadata_owasp }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>References</th>
+                                                    <td>{{ result.metadata_references|join:", " }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Vulnerability Class</th>
+                                                    <td>{{ result.metadata_vulnerability_class|join:", " }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                No snapshots available for this project.
+            </div>
+        {% endif %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
