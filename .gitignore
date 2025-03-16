@@ -1,3 +1,6 @@
 project_snapshots
 .vscode
 db.sqlite3
+.venv
+.env
+*__pycache__*
