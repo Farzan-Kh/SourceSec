@@ -17,18 +17,63 @@ class CodeAnalysisView(APIView):
             'multipart/form-data': {
                 'type': 'object',
                 'properties': {
-                    'file': {'type': 'string', 'format': 'binary'},
-                    'source_code': {'type': 'string'},
-                    'lang': {'type': 'string'},
-                    'repo_url': {'type': 'string', 'format': 'uri'},
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'description': "Upload a file for analysis. Mutually exclusive with `repo_url` and `source_code` + `lang`.",
+                    },
+                    'repo_url': {
+                        'type': 'string',
+                        'format': 'uri',
+                        'description': "Provide a repository URL for analysis. Mutually exclusive with `file` and `source_code` + `lang`.",
+                    },
+                    'source_code': {
+                        'type': 'string',
+                        'description': "Provide raw source code for analysis. Must be used with `lang`. Mutually exclusive with `file` and `repo_url`.",
+                    },
+                    'lang': {
+                        'type': 'string',
+                        'description': "Specify the programming language of the source code. Must be used with `source_code`.",
+                    },
                 },
-                'example': {
-                    'file': '(binary file data)',
-                    'description': 'A sample file upload'
-                }
+                'required': [],
             }
         },
-        responses={200: {'type': 'string', 'example': 'File uploaded successfully'}}
+        responses={
+            200: {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'check_id': {'type': 'string'},
+                        'location_path': {'type': 'string'},
+                        'location_start_line': {'type': 'integer'},
+                        'location_start_col': {'type': 'integer'},
+                        'message': {'type': 'string'},
+                        'metadata_category': {'type': 'string'},
+                        'metadata_impact': {'type': 'string'},
+                    },
+                },
+            },
+            400: {'description': 'Bad Request'},
+        },
+        examples=[
+            OpenApiExample(
+                'File Upload Example',
+                value={'file': '(binary file data)'},
+                request_only=True,
+            ),
+            OpenApiExample(
+                'Repository URL Example',
+                value={'repo_url': 'https://github.com/example/repo.git'},
+                request_only=True,
+            ),
+            OpenApiExample(
+                'Source Code Example',
+                value={'source_code': 'print("Hello, World!")', 'lang': 'python'},
+                request_only=True,
+            ),
+        ],
     )
     def post(self, request, *args, **kwargs):
         serializer = AnalysisRequestSerializer(data=request.data)
@@ -46,12 +91,9 @@ class CodeAnalysisView(APIView):
                             tar_ref.extractall(temp_dir)
                     else:
                         return Response({'error': 'Unsupported file format'}, status=status.HTTP_400_BAD_REQUEST)
-                elif 'source_code' in data:
+                elif 'source_code' in data and 'lang' in data:
                     source_code = data['source_code']
-                    lang = data.get('lang')
-                    if not lang:
-                        return Response({'error': 'Language must be specified for source code snippets.'}, status=status.HTTP_400_BAD_REQUEST)
-                    
+                    lang = data['lang']
                     lang_extensions = {
                         'python': 'py',
                         'javascript': 'js',
@@ -84,10 +126,13 @@ class CodeAnalysisView(APIView):
                     repo_url = data['repo_url']
                     git.Repo.clone_from(repo_url, temp_dir)
                 else:
-                    return Response({'error': 'No valid input provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-                analysis_results = run_semgrep_analysis(temp_dir)
-                return Response(analysis_results, status=status.HTTP_200_OK)
+                    return Response(
+                        {"error": "Invalid input parameters."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # Run Semgrep analysis
+                results = run_semgrep_analysis(temp_dir)
+                return Response(results, status=status.HTTP_200_OK)
             finally:
                 shutil.rmtree(temp_dir)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
