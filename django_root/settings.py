@@ -1,4 +1,5 @@
 from pathlib import Path
+import environ
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -6,13 +7,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': "/home/farzan/Documents/Uni/Web_Programming/SScanner/my-django-app/db.sqlite3",
+        'NAME': "db.sqlite3",
     }
 }
 
-SECRET_KEY = 'django-insecure-$!1e%(=)iz!*x9hu3m!)_nja)g3^d0+6)7sy+-ra9wg+bx=ckh'
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-DEBUG = True
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -25,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'staticAnalysis',
     'rest_framework',
+    'rest_framework.authtoken',
     'drf_spectacular',
     'allauth',
     'allauth.account',
@@ -46,6 +52,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 MIDDLEWARE = [
+    'allauth.account.middleware.AccountMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -55,7 +62,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'my_django_app.urls'
+ROOT_URLCONF = 'django_root.urls'
 
 TEMPLATES = [
     {
@@ -73,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'my_django_app.wsgi.application'
+WSGI_APPLICATION = 'django_root.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
