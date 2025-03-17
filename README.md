@@ -38,7 +38,7 @@ This is a Django-based web application that allows users to upload source code, 
 
 1. **Clone the Repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Farzan-Kh/SourceSec.git
    cd my-django-app
    ```
 
